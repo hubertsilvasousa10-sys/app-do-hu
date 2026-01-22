@@ -13,11 +13,6 @@ interface Toast {
   type: 'success' | 'info' | 'error';
 }
 
-// Fallback para ambientes sem HTTPS ou browsers antigos
-const generateId = () => {
-  return Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
-};
-
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'accounts' | 'financials'>('dashboard');
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -25,47 +20,40 @@ const App: React.FC = () => {
   const [earnings, setEarnings] = useState<EarningEntry[]>([]);
   const [toasts, setToasts] = useState<Toast[]>([]);
   
+  // Estado para o modal de confirmação de exclusão
   const [deleteConfirmation, setDeleteConfirmation] = useState<{ isOpen: boolean; accountId: string | null }>({
     isOpen: false,
     accountId: null
   });
 
-  // Carregamento inicial com tratamento de erro
+  // Initial Load
   useEffect(() => {
-    try {
-      const savedAccounts = storage.getAccounts();
-      const savedMetrics = storage.getMetrics();
-      const savedEarnings = storage.getEarnings();
-      
-      if (Array.isArray(savedAccounts)) setAccounts(savedAccounts);
-      if (Array.isArray(savedMetrics)) setMetrics(savedMetrics);
-      if (Array.isArray(savedEarnings)) setEarnings(savedEarnings);
-    } catch (e) {
-      console.error("Erro ao carregar dados do LocalStorage", e);
-    }
+    setAccounts(storage.getAccounts());
+    setMetrics(storage.getMetrics());
+    setEarnings(storage.getEarnings());
   }, []);
 
-  // Persistência automática
+  // Persistence Effects
   useEffect(() => { storage.saveAccounts(accounts); }, [accounts]);
   useEffect(() => { storage.saveMetrics(metrics); }, [metrics]);
   useEffect(() => { storage.saveEarnings(earnings); }, [earnings]);
 
   const addToast = useCallback((message: string, type: 'success' | 'info' | 'error' = 'success') => {
-    const id = generateId();
+    const id = crypto.randomUUID();
     setToasts(prev => [...prev, { id, message, type }]);
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
-    }, 3500);
+    }, 3000);
   }, []);
 
   const handleAddAccount = (accData: Omit<Account, 'id'>) => {
     const newAcc: Account = {
       ...accData,
-      id: generateId(),
+      id: crypto.randomUUID(),
       isHot: false,
     };
     setAccounts(prev => [...prev, newAcc]);
-    addToast('Perfil criado com sucesso!');
+    addToast('Conta criada com sucesso!');
   };
 
   const triggerDeleteConfirmation = (id: string) => {
@@ -78,7 +66,7 @@ const App: React.FC = () => {
       setAccounts(prev => prev.filter(a => a.id !== id));
       setMetrics(prev => prev.filter(m => m.accountId !== id));
       setEarnings(prev => prev.filter(e => e.accountId !== id));
-      addToast('Conta removida permanentemente.', 'info');
+      addToast('Conta e dados removidos permanentemente.', 'info');
     }
     setDeleteConfirmation({ isOpen: false, accountId: null });
   };
@@ -89,7 +77,7 @@ const App: React.FC = () => {
         acc.id === id ? { ...acc, isHot: !acc.isHot } : acc
       );
       const acc = updated.find(a => a.id === id);
-      addToast(acc?.isHot ? 'Foco total nesta conta! 🔥' : 'Removido da prioridade');
+      addToast(acc?.isHot ? 'Adicionado à Hot List 🔥' : 'Removido da Hot List');
       return updated;
     });
   };
@@ -97,28 +85,28 @@ const App: React.FC = () => {
   const handleAddMetric = (metricData: Omit<MetricEntry, 'id'>) => {
     const newMetric: MetricEntry = {
       ...metricData,
-      id: generateId(),
+      id: crypto.randomUUID(),
     };
     setMetrics(prev => [...prev, newMetric]);
-    addToast('Evolução registrada!');
+    addToast('Métricas salvas!');
   };
 
   const handleAddEarning = (earningData: Omit<EarningEntry, 'id'>) => {
     const newEarning: EarningEntry = {
       ...earningData,
-      id: generateId(),
+      id: crypto.randomUUID(),
     };
     setEarnings(prev => [...prev, newEarning]);
-    addToast('Ganhos computados! 💸');
+    addToast('Ganhos registrados! 💰');
   };
 
   const accountToBeDeleted = accounts.find(a => a.id === deleteConfirmation.accountId);
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen relative overflow-x-hidden bg-[#fcfdfe]">
+    <div className="flex flex-col md:flex-row min-h-screen relative">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       
-      <main className="flex-1 p-4 md:p-10 lg:p-12 overflow-y-auto max-h-screen">
+      <main className="flex-1 p-4 md:p-8 lg:p-12 overflow-y-auto max-h-screen bg-[#f8fafc]">
         <div className="max-w-6xl mx-auto">
           {activeTab === 'dashboard' && (
             <Dashboard 
@@ -150,29 +138,30 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      {/* Modal de Exclusão */}
+      {/* Modal de Confirmação de Exclusão */}
       {deleteConfirmation.isOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 animate-scaleIn">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 animate-scaleIn">
             <div className="text-center mb-6">
-              <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-                🗑️
+              <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                ⚠️
               </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-2">Excluir Perfil?</h3>
-              <p className="text-slate-500 text-sm leading-relaxed">
-                Você perderá todo o histórico de métricas e ganhos de <span className="font-bold text-slate-800">{accountToBeDeleted?.name}</span>.
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Atenção!</h3>
+              <p className="text-gray-500 text-sm">
+                Você está prestes a excluir a conta <span className="font-bold text-gray-800">{accountToBeDeleted?.name}</span>. 
+                Esta ação apagará todas as métricas e ganhos vinculados e não pode ser desfeita.
               </p>
             </div>
             <div className="flex flex-col gap-3">
               <button 
                 onClick={confirmDeleteAccount}
-                className="w-full bg-rose-600 text-white py-4 rounded-2xl font-bold hover:bg-rose-700 transition-all shadow-lg shadow-rose-100"
+                className="w-full bg-rose-600 text-white py-3 rounded-xl font-bold hover:bg-rose-700 transition-colors shadow-lg shadow-rose-100"
               >
-                Sim, Excluir Agora
+                Excluir Conta Permanentemente
               </button>
               <button 
                 onClick={() => setDeleteConfirmation({ isOpen: false, accountId: null })}
-                className="w-full bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold hover:bg-slate-200 transition-all"
+                className="w-full bg-gray-100 text-gray-600 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors"
               >
                 Cancelar
               </button>
@@ -181,29 +170,37 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Toast Manager */}
-      <div className="fixed bottom-6 right-6 z-[110] flex flex-col gap-3 pointer-events-none">
+      {/* Notificações (Toasts) */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2">
         {toasts.map(toast => (
           <div 
             key={toast.id} 
-            className={`px-6 py-4 rounded-2xl shadow-2xl text-white font-bold flex items-center gap-3 animate-slideInRight pointer-events-auto ${
+            className={`px-4 py-3 rounded-xl shadow-2xl text-white font-medium flex items-center gap-2 animate-slideInRight ${
               toast.type === 'success' ? 'bg-emerald-600' : 
-              toast.type === 'error' ? 'bg-rose-600' : 'bg-slate-800'
+              toast.type === 'error' ? 'bg-rose-600' : 'bg-gray-800'
             }`}
           >
-            <span className="text-xl">{toast.type === 'success' ? '⚡' : toast.type === 'info' ? 'ℹ️' : '⚠️'}</span>
+            <span>{toast.type === 'success' ? '✅' : toast.type === 'info' ? 'ℹ️' : '❌'}</span>
             {toast.message}
           </div>
         ))}
       </div>
 
       <style>{`
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .animate-fadeIn { animation: fadeIn 0.3s ease-out forwards; }
-        .animate-slideInRight { animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-        .animate-scaleIn { animation: scaleIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes slideInRight {
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes scaleIn {
+          from { transform: scale(0.9); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+        .animate-slideInRight {
+          animation: slideInRight 0.3s ease-out forwards;
+        }
+        .animate-scaleIn {
+          animation: scaleIn 0.2s ease-out forwards;
+        }
       `}</style>
     </div>
   );
