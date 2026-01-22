@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
-      // Polyfill para bibliotecas que esperam o ambiente Node (como Recharts/Victory)
+      // Polyfill essencial para Recharts em ambiente de navegador
       window.process = { env: { NODE_ENV: 'production' } };
     </script>
     <style>
@@ -22,15 +22,16 @@
             background-color: #f8fafc;
             color: #1e293b;
         }
-        /* Fallback message style */
+        /* Indicador visual de carregamento enquanto o JS não monta */
         #root:empty::before {
-            content: 'Carregando painel de controle...';
+            content: 'Iniciando sistema...';
             display: flex;
             align-items: center;
             justify-content: center;
             height: 100vh;
-            font-weight: 500;
+            font-weight: 600;
             color: #6366f1;
+            font-size: 1.1rem;
         }
     </style>
 <script type="importmap">
@@ -41,15 +42,13 @@
     "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
     "react/jsx-runtime": "https://esm.sh/react@18.3.1/jsx-runtime",
     "recharts": "https://esm.sh/recharts@2.12.7?external=react,react-dom",
-    "react/": "https://esm.sh/react@18.3.1/",
-    "react-dom/": "https://esm.sh/react-dom@18.3.1/"
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/"
   }
 }
 </script>
 </head>
 <body>
     <div id="root"></div>
-    <!-- O ambiente automaticamente carrega o index.tsx, mas garantimos o mapeamento aqui -->
-    <script type="module" src="index.js"></script>
 </body>
 </html>
