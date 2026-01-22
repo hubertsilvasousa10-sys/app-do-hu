@@ -1,7 +1,5 @@
 {
   "name": "app do hu",
   "description": "Uma plataforma completa para gestão de múltiplas contas de TikTok e Instagram, focada em métricas de desempenho e acompanhamento de monetização financeira.",
-  "requestFramePermissions": [
-    "camera"
-  ]
+  "requestFramePermissions": []
 }

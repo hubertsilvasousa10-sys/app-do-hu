@@ -31,9 +31,8 @@ export interface Account {
   platforms: Platform[];
   niche: string;
   createdAt: string;
-  profileUrl?: string;
-  isHot?: boolean;
-  lastSync?: string; // Data da última sincronização IA
+  profileUrl?: string; // Novo campo
+  isHot?: boolean;     // Novo campo (Hot List)
 }
 
 export interface DashboardStats {
